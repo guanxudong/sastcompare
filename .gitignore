@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.python-version
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports & datasets (generated)
+reports/*.json
+!reports/.gitkeep
+datasets/*.json
+datasets/**/*.java
+datasets/**/*.py
+datasets/**/*.c
+datasets/**/*.cpp
+!datasets/.gitkeep
+
+# Logs
+*.log
+logs/
