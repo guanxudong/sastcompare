@@ -218,6 +218,100 @@ llm_config = LLMConfig(
 
 ---
 
+## Moving from Simulated to Real-World Testing
+
+By default, this PoC runs entirely with **simulated data** — no external API calls or live SonarQube instance is required. To run against real codebases and live services, you need the following credentials and setup changes.
+
+### Required Credentials
+
+| Service | What You Need | How to Obtain |
+|---|---|---|
+| **SonarQube** | `SONAR_TOKEN` + `SONAR_PROJECT_KEY` | [Generate a token](https://docs.sonarsource.com/sonarqube-server/latest/user-guide/managing-tokens/) in your SonarQube server UI; create or reuse a project key |
+| **Anthropic (Claude)** | `ANTHROPIC_API_KEY` | Sign up at [console.anthropic.com](https://console.anthropic.com) and create an API key |
+
+### 1. SonarQube Setup
+
+**Option A — Local (Docker, fastest for testing):**
+```bash
+docker run -d --name sonarqube \
+  -p 9000:9000 \
+  -v sonarqube_data:/opt/sonarqube/data \
+  sonarqube:community
+```
+Then open `http://localhost:9000`, log in with `admin/admin`, and generate a token under **Administration → Security → Users → Tokens**.
+
+**Option B — Remote / Enterprise:**
+Use your existing SonarQube Enterprise instance. Ensure the server URL and token have access to the target project.
+
+### 2. Anthropic API Setup
+
+1. Create an account at [console.anthropic.com](https://console.anthropic.com)
+2. Navigate to **API Keys** and generate a new key
+3. Set the environment variable:
+   ```bash
+   export ANTHROPIC_API_KEY="sk-ant-..."
+   ```
+
+### 3. Code Changes Required
+
+The current `engine/run_comparison.py` hard-codes the **simulated** pipeline. To switch to live analysis, modify the following:
+
+**A. Replace simulated dataset loading**
+```python
+# In run_comparison.py ~line 66
+dm = DatasetManager()
+# Change from:
+stats = dm.load_simulated_dataset()
+# To:
+stats = dm.load_real_dataset(path="./datasets/owasp-benchmark")
+```
+
+**B. Enable live SonarQube scanning**
+```python
+# In run_comparison.py ~line 81
+# Change from:
+sonar_results = run_sonarqube_analysis(samples)  # simulated
+# To:
+scanner = SonarQubeScanner()
+sonar_results = scanner.scan_project(samples, project_key="your-project-key")
+```
+
+**C. Enable live LLM analysis**
+```python
+# In run_comparison.py ~line 91
+# Change from:
+opus_results = run_llm_analysis(samples, model="claude-opus-4-1-20250819")  # simulated
+# To:
+analyzer = LLMAnalyzer(model="claude-opus-4-1-20250819")
+opus_results = [analyzer.analyze(s["source_code"], s["language"]) for s in samples]
+```
+
+> **Note:** The `sonarqube_scanner.py` and `llm_analyzer.py` modules already contain the real API client classes (`SonarQubeScanner` and `LLMAnalyzer`). The simulated wrappers (`run_sonarqube_analysis` / `run_llm_analysis`) are thin stubs used by the default pipeline.
+
+### 4. Cost Estimates (Live Mode)
+
+| Model | Input Price | Output Price | Est. Cost per 1K LOC |
+|---|---|---|---|
+| Claude Opus 4.1 | $5.00 / 1M tokens | $25.00 / 1M tokens | ~$0.50–$2.00 |
+| Claude Sonnet 4 | $3.00 / 1M tokens | $15.00 / 1M tokens | ~$0.30–$1.20 |
+| Claude Haiku 4 | $1.00 / 1M tokens | $5.00 / 1M tokens | ~$0.10–$0.40 |
+
+*Actual cost depends on code complexity, prompt size, and output verbosity. The PoC's simulated `$0.52` / `$0.26` figures are illustrative only.*
+
+### 5. Supported Real-World Datasets
+
+To run against industry-standard benchmarks instead of the built-in 16 samples:
+
+| Dataset | Download | Integration Point |
+|---|---|---|
+| **OWASP Benchmark** | `git clone https://github.com/OWASP/Benchmark` | Implement `DatasetManager.load_owasp_benchmark()` |
+| **Juliet Test Suite** | [NIST SARD](https://samate.nist.gov/SARD/test-suites.php) | Implement `DatasetManager.load_juliet_suite()` |
+| **SecurityEval** | `git clone https://github.com/VulnExpo/SecurityEval` | Implement `DatasetManager.load_securityeval()` |
+
+See `engine/dataset_manager.py` for the dataset loader interface.
+
+---
+
 ## Supported Vulnerability Datasets
 
 The engine is designed to support multiple industry-standard vulnerability benchmarks:
