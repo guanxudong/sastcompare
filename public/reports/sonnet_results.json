@@ -20,7 +20,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.970Z"
   },
   {
     "sample_id": "JAVA-SQLI-002",
@@ -43,7 +43,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.970Z"
   },
   {
     "sample_id": "JAVA-XSS-001",
@@ -62,11 +62,11 @@
       }
     ],
     "summary": "Analysis complete",
-    "analysis_duration_ms": 500,
+    "analysis_duration_ms": 501,
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "JAVA-SECRETS-001",
@@ -89,7 +89,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "JAVA-PATH-001",
@@ -112,7 +112,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "JAVA-CMDI-001",
@@ -135,7 +135,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "JAVA-SAFE-001",
@@ -147,7 +147,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "JAVA-SAFE-002",
@@ -159,7 +159,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "C-BUF-001",
@@ -182,7 +182,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "C-FMT-001",
@@ -205,7 +205,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "PY-SQLI-001",
@@ -228,7 +228,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "PY-CMDI-001",
@@ -251,7 +251,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "PY-SECRETS-001",
@@ -274,7 +274,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "PY-SSRF-001",
@@ -286,7 +286,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "PY-SAFE-001",
@@ -298,7 +298,7 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   },
   {
     "sample_id": "PY-SAFE-002",
@@ -310,6 +310,6 @@
     "tokens_input": 2500,
     "tokens_output": 600,
     "cost_usd": 0.0165,
-    "timestamp": "2026-06-07T08:09:33Z"
+    "timestamp": "2026-06-07T10:29:12.971Z"
   }
 ]

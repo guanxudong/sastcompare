@@ -1,6 +1,6 @@
 # SASTCompare: LLM vs SonarQube SAST Comparison PoC
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Node.js 18+](https://img.shields.io/badge/node-18+-339933.svg)](https://nodejs.org/)
 [![React 18](https://img.shields.io/badge/react-18-61dafb.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/typescript-5.0+-3178c6.svg)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -9,7 +9,7 @@
 
 > ⚠️ **Disclaimer:** All vulnerability samples, detection results, API cost figures, and performance metrics in this repository are **simulated / synthetic data** for demonstration and research purposes only. They do **not** reflect real-world scanning of production codebases, and the "SonarQube Enterprise" results are modeled estimates rather than live scan outputs. Do not use these numbers for procurement or security assurance decisions.
 
-This repository provides a complete evaluation framework to measure how well modern Large Language Models perform at detecting security vulnerabilities in source code compared to enterprise-grade rule-based SAST tools like SonarQube. It includes a Python analysis engine, vulnerability test datasets, evaluation metrics computation, and an interactive React-based web dashboard.
+This repository provides a complete evaluation framework to measure how well modern Large Language Models perform at detecting security vulnerabilities in source code compared to enterprise-grade rule-based SAST tools like SonarQube. It includes a TypeScript analysis engine, vulnerability test datasets, evaluation metrics computation, and an interactive React-based web dashboard.
 
 ---
 
@@ -79,42 +79,32 @@ This repository provides a complete evaluation framework to measure how well mod
 
 ### Prerequisites
 
-- **Python 3.10+**
-- **Node.js 18+** (for Web UI)
+- **Node.js 18+**
 - (Optional) **SonarQube Server** — for live SAST scanning
 - (Optional) **Anthropic API Key** — for live LLM analysis
 
-### 1. Clone & Setup Python Engine
+### 1. Clone & Install Dependencies
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/sastcompare.git
 cd sastcompare
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install Python dependencies (add requirements.txt if needed)
-pip install requests
+# Install all dependencies (frontend + backend)
+npm install
 ```
 
 ### 2. Run the Comparison Pipeline
 
 ```bash
 # Run with simulated data (no API keys needed)
-cd engine
-python run_comparison.py -o ../public/reports
+npm run analyze
 
-# Output: reports/comparison_report.json
+# Output: public/reports/comparison_report.json
 ```
 
 ### 3. Launch the Web Dashboard
 
 ```bash
-# Install frontend dependencies
-cd ..
-npm install
-
 # Start development server
 npm run dev
 
@@ -132,33 +122,34 @@ The dashboard will be available at `http://localhost:5173`.
 
 | Module | File | Purpose |
 |---|---|---|
-| Dataset Manager | `engine/dataset_manager.py` | Load, manage, and export vulnerability test datasets |
-| SonarQube Scanner | `engine/sonarqube_scanner.py` | Interface with SonarQube Server via REST API |
-| LLM Analyzer | `engine/llm_analyzer.py` | Vulnerability detection using Claude models with structured prompting |
-| Evaluator | `engine/evaluator.py` | Compute Precision, Recall, F1, FPR, FNR, and cost metrics |
-| Config | `engine/config.py` | Centralized configuration for all components |
+| Dataset Manager | `backend/dataset-manager.ts` | Load, manage, and export vulnerability test datasets |
+| SonarQube Scanner | `backend/sonarqube-scanner.ts` | Interface with SonarQube Server via REST API |
+| LLM Analyzer | `backend/llm-analyzer.ts` | Vulnerability detection using Claude models with structured prompting |
+| Evaluator | `backend/evaluator.ts` | Compute Precision, Recall, F1, FPR, FNR, and cost metrics |
+| Config | `backend/config.ts` | Centralized configuration for all components |
 
 ### Running Individual Components
 
-```python
-# Analyze a single code sample with LLM
-from engine.llm_analyzer import LLMAnalyzer
+```typescript
+// Analyze a single code sample with LLM
+import { LLMAnalyzer } from "./backend/llm-analyzer";
 
-analyzer = LLMAnalyzer(model="claude-sonnet-4-20250514")
-result = analyzer.analyze(
-    sample_id="JAVA-SQLI-001",
-    source_code="...",
-    language="Java"
-)
-print(result.to_dict())
+const analyzer = new LLMAnalyzer("claude-sonnet-4-20250514");
+const result = await analyzer.analyze(
+  "JAVA-SQLI-001",
+  "...",
+  "Java"
+);
+console.log(result);
 
-# Scan with SonarQube
-from engine.sonarqube_scanner import SonarQubeScanner
+// Scan with SonarQube
+import { SonarQubeScanner } from "./backend/sonarqube-scanner";
 
-scanner = SonarQubeScanner()
-if scanner.check_health():
-    issues = scanner.get_project_issues("my-project-key")
-    print(f"Found {len(issues)} issues")
+const scanner = new SonarQubeScanner();
+if (await scanner.checkHealth()) {
+  const issues = await scanner.getProjectIssues("my-project-key");
+  console.log(`Found ${issues.length} issues`);
+}
 ```
 
 ---
@@ -200,20 +191,25 @@ SONAR_PROJECT_KEY=your-project-key
 
 # Anthropic API (for live LLM analysis)
 ANTHROPIC_API_KEY=your-anthropic-api-key
+# Optional: custom base URL (e.g., for proxy or Azure deployments)
+# ANTHROPIC_BASE_URL=https://api.anthropic.com
 ```
 
 ### Model Selection
 
-Edit `engine/config.py` to change default models:
+Edit `backend/config.ts` to change default models:
 
-```python
-llm_config = LLMConfig(
-    model_opus="claude-opus-4-1-20250819",
-    model_sonnet="claude-sonnet-4-20250514",
-    model_haiku="claude-haiku-4-20250514",
-    max_tokens=4096,
-    temperature=0.1,
-)
+```typescript
+export const llmConfig: LLMConfig = {
+  anthropic_api_key: getEnv("ANTHROPIC_API_KEY", ""),
+  anthropic_base_url: getEnv("ANTHROPIC_BASE_URL", "https://api.anthropic.com"),
+  model_opus: "claude-opus-4-1-20250819",
+  model_sonnet: "claude-sonnet-4-20250514",
+  model_haiku: "claude-haiku-4-20250514",
+  max_tokens: 4096,
+  temperature: 0.1,
+  pricing: { ... },
+};
 ```
 
 ---
@@ -247,46 +243,27 @@ Use your existing SonarQube Enterprise instance. Ensure the server URL and token
 
 1. Create an account at [console.anthropic.com](https://console.anthropic.com)
 2. Navigate to **API Keys** and generate a new key
-3. Set the environment variable:
+3. Set the environment variables:
    ```bash
    export ANTHROPIC_API_KEY="sk-ant-..."
+   # Optional: override the default API endpoint
+   export ANTHROPIC_BASE_URL="https://api.anthropic.com"
    ```
 
-### 3. Code Changes Required
+> **Custom Endpoints:** If you are using a proxy, Azure OpenAI Service, or an internal gateway, set `ANTHROPIC_BASE_URL` to your custom endpoint (e.g., `https://your-proxy.example.com`). The engine will automatically route all Anthropic API calls to this base URL.
 
-The current `engine/run_comparison.py` hard-codes the **simulated** pipeline. To switch to live analysis, modify the following:
+### 3. Running with Live APIs
 
-**A. Replace simulated dataset loading**
-```python
-# In run_comparison.py ~line 66
-dm = DatasetManager()
-# Change from:
-stats = dm.load_simulated_dataset()
-# To:
-stats = dm.load_real_dataset(path="./datasets/owasp-benchmark")
+The `backend/run-comparison.ts` pipeline **automatically** uses live Anthropic API calls when `ANTHROPIC_API_KEY` is set. If the key is missing, it falls back to simulated results with a console warning.
+
+To use live analysis, simply set the environment variable and run:
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."
+npm run analyze
 ```
 
-**B. Enable live SonarQube scanning**
-```python
-# In run_comparison.py ~line 81
-# Change from:
-sonar_results = run_sonarqube_analysis(samples)  # simulated
-# To:
-scanner = SonarQubeScanner()
-sonar_results = scanner.scan_project(samples, project_key="your-project-key")
-```
-
-**C. Enable live LLM analysis**
-```python
-# In run_comparison.py ~line 91
-# Change from:
-opus_results = run_llm_analysis(samples, model="claude-opus-4-1-20250819")  # simulated
-# To:
-analyzer = LLMAnalyzer(model="claude-opus-4-1-20250819")
-opus_results = [analyzer.analyze(s["source_code"], s["language"]) for s in samples]
-```
-
-> **Note:** The `sonarqube_scanner.py` and `llm_analyzer.py` modules already contain the real API client classes (`SonarQubeScanner` and `LLMAnalyzer`). The simulated wrappers (`run_sonarqube_analysis` / `run_llm_analysis`) are thin stubs used by the default pipeline.
+> **Note:** The `llm-analyzer.ts` module automatically calls the live Anthropic API when `ANTHROPIC_API_KEY` is set. If the key is missing, it logs a warning and falls back to simulated results. No code changes are required to enable live analysis — just set the environment variable.
 
 ### 4. Cost Estimates (Live Mode)
 
@@ -379,14 +356,14 @@ This PoC is grounded in the following key research findings:
 
 ```
 sastcompare/
-|-- engine/                          # Python analysis engine
-|   |-- __init__.py
-|   |-- config.py                    # Configuration management
-|   |-- dataset_manager.py           # Dataset loading & management
-|   |-- sonarqube_scanner.py         # SonarQube REST API client
-|   |-- llm_analyzer.py              # Claude LLM vulnerability analyzer
-|   |-- evaluator.py                 # Metrics computation engine
-|   |-- run_comparison.py            # Main pipeline runner
+|-- backend/                         # TypeScript analysis engine
+|   |-- types.ts                     # Shared TypeScript interfaces
+|   |-- config.ts                    # Configuration management
+|   |-- dataset-manager.ts           # Dataset loading & management
+|   |-- sonarqube-scanner.ts         # SonarQube REST API client
+|   |-- llm-analyzer.ts              # Claude LLM vulnerability analyzer
+|   |-- evaluator.ts                 # Metrics computation engine
+|   |-- run-comparison.ts            # Main pipeline runner
 |
 |-- src/                             # React frontend source
 |   |-- components/                  # UI components
