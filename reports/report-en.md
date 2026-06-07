@@ -2,6 +2,8 @@
 
 **TL;DR:** Across 16 cross-language vulnerability samples, Claude Opus 4.1 achieved **F1=1.000** (100% detection rate), outperforming SonarQube Enterprise at **F1=0.909** (83.3% detection rate). Claude Sonnet 4 reached **~95% of Opus's detection capability at ~50% of the cost** (F1=0.957), validating that a well-designed agent harness can make Sonnet a viable substitute for Opus. The recommended enterprise strategy is a **hybrid architecture**: SonarQube as the CI/CD baseline scanner + LLM as a deep analysis layer.
 
+> ⚠️ **Data Disclaimer:** All vulnerability samples, detection results, API cost figures, and performance metrics presented in this report are **simulated / synthetic data** generated for this Proof-of-Concept. They do **not** represent real-world scanning of production codebases, and the "SonarQube Enterprise" results are modeled estimates rather than live scan outputs. This report is intended for research and demonstration purposes only.
+
 ---
 
 ## 1. Research Background & Motivation

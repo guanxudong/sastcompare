@@ -7,6 +7,8 @@
 
 > **A production-ready Proof-of-Concept comparing Claude LLM models (Opus/Sonnet) against SonarQube Enterprise for Static Application Security Testing (SAST) capabilities.**
 
+> ⚠️ **Disclaimer:** All vulnerability samples, detection results, API cost figures, and performance metrics in this repository are **simulated / synthetic data** for demonstration and research purposes only. They do **not** reflect real-world scanning of production codebases, and the "SonarQube Enterprise" results are modeled estimates rather than live scan outputs. Do not use these numbers for procurement or security assurance decisions.
+
 This repository provides a complete evaluation framework to measure how well modern Large Language Models perform at detecting security vulnerabilities in source code compared to enterprise-grade rule-based SAST tools like SonarQube. It includes a Python analysis engine, vulnerability test datasets, evaluation metrics computation, and an interactive React-based web dashboard.
 
 ---
