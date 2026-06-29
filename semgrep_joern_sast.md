@@ -1,30 +1,30 @@
-# 基于 Semgrep + Joern + PydanticAI 的智能 SAST 审计方案
+# Intelligent SAST Audit Pipeline: Semgrep + Joern + PydanticAI
 
-## 技术文档 v1.0
-
----
-
-## 1. 方案概述
-
-本方案构建一条企业级、可编排的自动化安全审计流水线，结合 **Semgrep** 的广度扫描能力、**Joern** 的深度数据流验证能力，以及 **PydanticAI** 的 Agent 编排能力，实现从代码仓库到结构化安全报告的全自动化分析。
-
-### 1.1 核心目标
-- **自动化**：全链路无人值守，从代码拉取到报告生成
-- **精准**：Semgrep 初筛 + Joern 数据流验证 + LLM 语义确认，三层漏斗降低误报
-- **可编排**：基于 PydanticAI 的 Agent Framework，支持任务拆分、并行执行、状态持久化
-- **可落地**：输出按安全等级排序的汇总报告，含漏洞定位、影响分析、修复建议
-
-### 1.2 技术栈
-| 组件 | 作用 | 版本要求 |
-|------|------|---------|
-| **Semgrep** | 静态模式匹配，快速发现候选 Sink | >= 1.70 |
-| **Joern** | CPG 图分析，跨过程数据流验证 | >= 2.0 |
-| **PydanticAI** | Agent 编排框架，类型安全的工作流定义 | >= 0.8 |
-| **LLM** | 语义分析、PoC 生成、修复建议 | GPT-4o / Claude 3.5 |
+## Technical Specification v1.0
 
 ---
 
-## 2. 架构设计
+## 1. Overview
+
+This document specifies an enterprise-grade, orchestrated automated security audit pipeline. It combines **Semgrep** for broad pattern matching, **Joern** for deep cross-procedural data-flow verification, and **PydanticAI** as the agent orchestration framework to deliver fully automated analysis from source code repository to structured security report.
+
+### 1.1 Objectives
+- **Automation**: End-to-end unattended execution from code ingestion to report generation
+- **Precision**: Three-layer funnel (Semgrep triage -> Joern data-flow validation -> LLM semantic confirmation) to minimize false positives
+- **Orchestration**: PydanticAI Agent Framework enabling task decomposition, parallel execution, and state persistence
+- **Actionability**: Deliver a consolidated report ranked by severity, including vulnerability location, impact analysis, and concise remediation guidance
+
+### 1.2 Technology Stack
+| Component | Role | Minimum Version |
+|-----------|------|-----------------|
+| **Semgrep** | Static pattern matching; rapid Sink candidate discovery | >= 1.70 |
+| **Joern** | CPG graph analysis; cross-procedural data-flow verification | >= 2.0 |
+| **PydanticAI** | Agent orchestration framework; type-safe workflow definition | >= 0.8 |
+| **LLM** | Semantic analysis, PoC generation, remediation recommendations | GPT-4o / Claude 3.5 |
+
+---
+
+## 2. Architecture
 
 ```
 +---------------------------------------------------------------------+
@@ -37,36 +37,36 @@
 |         |                    |                |              |      |
 |    +----------------------------------------------------------+   |
 |    |  Stage 5: Final Report Generation (Serial Aggregation)   |   |
-|    |  - Deduplicate, Sort, CVSS Scoring                         |   |
-|    |  - Generate Unified Security Report                       |   |
+|    |  - Deduplicate, Sort, CVSS Scoring                       |   |
+|    |  - Generate Unified Security Report                     |   |
 |    +----------------------------------------------------------+   |
 +---------------------------------------------------------------------+
 ```
 
 ---
 
-## 3. 五阶段流程设计
+## 3. Five-Stage Workflow
 
 ### Stage 1: Project Preprocessing & CPG Build (Serial, Non-Parallelizable)
 
-**Goal**: Prepare foundational data for all subsequent analysis.
+**Goal**: Prepare foundational artifacts for all downstream analysis.
 
-**Task List**:
-1. Clone/update code repository
-2. Dependency resolution (identify language, framework, build system)
-3. Joern CPG build: `joern-parse ./src --output app.cpg.bin`
+**Tasks**:
+1. Clone or update the target code repository
+2. Resolve dependencies (detect language, framework, and build system)
+3. Build Joern CPG: `joern-parse ./src --output app.cpg.bin`
 4. Export symbol index (method names, class names, file tree) for fast lookup
 5. Initialize PydanticAI global state
 
-**Why Non-Parallelizable**:
-- CPG is the sole data source for all subsequent Joern queries
-- File tree index is needed for Semgrep to skip unchanged files efficiently
-- Global state (project metadata, language type) must be determined before any Agent starts
+**Why Serial**:
+- The CPG is the sole data source for all subsequent Joern queries
+- The file-tree index enables Semgrep to skip unchanged files efficiently
+- Global state (project metadata, language type) must be finalized before any Agent starts
 
 **Outputs**:
-- `app.cpg.bin` (Joern graph database)
-- `project_meta.json` (language, framework, entry files)
-- `symbol_index.json` (method name -> file path mapping)
+- `app.cpg.bin` — Joern graph database
+- `project_meta.json` — language, framework, entry files
+- `symbol_index.json` — method name to file path mapping
 
 ---
 
@@ -74,15 +74,15 @@
 
 **Goal**: Rapidly cover the entire codebase and produce candidate vulnerability points.
 
-**Task List**:
+**Tasks**:
 1. Load multiple rule sets and scan in parallel:
-   - `p/owasp-top-ten` (general vulnerabilities)
-   - `p/sql-injection` (SQL injection specific)
-   - `p/command-injection` (command injection specific)
-   - `p/xss` (XSS specific)
-   - `p/security-audit` (audit mode)
-2. Standardize output: unify to internal `VulnerabilityCandidate` model
-3. Preliminary deduplication: merge duplicate hits on same file/line
+   - `p/owasp-top-ten` — general vulnerabilities
+   - `p/sql-injection` — SQL injection specific
+   - `p/command-injection` — command injection specific
+   - `p/xss` — cross-site scripting specific
+   - `p/security-audit` — audit mode
+2. Standardize output into the internal `VulnerabilityCandidate` model
+3. Preliminary deduplication: merge duplicate hits on the same file and line
 
 **Parallel Strategy**:
 ```python
@@ -91,7 +91,7 @@ from pydantic_ai import Agent
 
 semgrep_rules = [
     "p/owasp-top-ten",
-    "p/sql-injection", 
+    "p/sql-injection",
     "p/command-injection",
     "p/xss",
     "p/security-audit"
@@ -112,22 +112,22 @@ results = await asyncio.gather(*[
 ```
 
 **Why Parallelizable**:
-- Each rule set scans independently with no shared state
-- Semgrep processes are read-only on source code, no resource conflicts
+- Each rule set scans independently with no shared mutable state
+- Semgrep processes are read-only against source code, producing no resource conflicts
 - Results are naturally mergeable (JSON array concatenation)
 
 **Outputs**:
-- `semgrep_candidates.json` (candidate vulnerability list with file, line, rule ID, confidence)
+- `semgrep_candidates.json` — candidate vulnerability list (file, line, rule ID, confidence)
 
 ---
 
-### Stage 3: Joern Deep Data Flow Verification (Parallelizable, by Sink Batch)
+### Stage 3: Joern Deep Data-Flow Verification (Parallelizable, by Sink Batch)
 
-**Goal**: Verify whether Semgrep candidate Sinks are actually tainted by external input.
+**Goal**: Verify whether Semgrep candidate Sinks are actually reachable by external (tainted) input.
 
-**Task List**:
+**Tasks**:
 1. Extract Sink method names and locations from Semgrep results
-2. Build Source collection (HTTP entry points, message queue consumers, file upload handlers, etc.)
+2. Build the Source set (HTTP entry points, message-queue consumers, file-upload handlers, etc.)
 3. Execute `reachableByFlows` query for each Sink:
    ```scala
    // Joern CPGQL query template
@@ -135,8 +135,8 @@ results = await asyncio.gather(*[
    def sink = cpg.call.name("executeQuery").argument
    sink.reachableByFlows(source).p
    ```
-4. For confirmed data flow paths, execute **Program Slicing** to extract taint-relevant code
-5. Serialize slice results to `TaintPath` model
+4. For confirmed data-flow paths, execute **Program Slicing** to extract taint-relevant code
+5. Serialize slice results into the `TaintPath` model
 
 **Parallel Strategy**:
 ```python
@@ -179,33 +179,33 @@ taint_paths = await asyncio.gather(*[
 
 **Why Parallelizable**:
 - Joern supports multiple independent CPG queries (read-only graph traversal)
-- Each Sink data flow verification has no state dependency
-- But limit batch size (recommend <= 10 Sinks) to avoid Joern memory explosion
+- Each Sink data-flow verification has no state dependency on others
+- Limit batch size (recommend <= 10 Sinks) to avoid Joern memory explosion
 
 **Serial Constraints**:
-- Must wait for Stage 2 completion (needs Semgrep Sink list as input)
-- Must wait for Stage 1 completion (needs CPG already built)
+- Must wait for Stage 2 completion (requires Semgrep Sink list as input)
+- Must wait for Stage 1 completion (requires CPG already built)
 
 **Outputs**:
-- `taint_paths.json` (confirmed taint paths with slice code, call chain, line mappings)
+- `taint_paths.json` — confirmed taint paths with slice code, call chain, and line mappings
 
 ---
 
 ### Stage 4: LLM Semantic Analysis & PoC Generation (Parallelizable, by Path Batch)
 
-**Goal**: Semantic judgment on Joern-verified taint paths, generating vulnerability confirmation, PoC, and fix suggestions.
+**Goal**: Perform semantic judgment on Joern-verified taint paths, producing vulnerability confirmation, PoC, and remediation guidance.
 
-**Task List**:
+**Tasks**:
 1. Load `TaintPath` data
-2. Construct structured Prompt (call chain + slice code + audit tasks)
-3. Call LLM for:
+2. Construct a structured Prompt (call chain + slice code + audit tasks)
+3. Invoke LLM for:
    - Vulnerability confirmation (Vulnerable / Not Vulnerable)
    - Vulnerability type classification (SQLi / CMDi / XSS / etc.)
-   - CVSS scoring and risk level
+   - CVSS scoring and risk level assignment
    - Exploit condition analysis
-   - PoC Payload generation
+   - PoC payload generation
    - Fix code suggestions
-4. Write results to `VulnerabilityReport` model
+4. Write results into the `VulnerabilityReport` model
 
 **PydanticAI Agent Design**:
 ```python
@@ -213,7 +213,7 @@ from pydantic import BaseModel, Field
 from typing import Literal
 
 class VulnerabilityReport(BaseModel):
-    vuln_id: str = Field(description="Unique vulnerability ID, e.g., VULN-2026-001")
+    vuln_id: str = Field(description="Unique ID, e.g., VULN-2026-001")
     title: str = Field(description="Vulnerability title, e.g., SQL Injection in UserController")
     severity: Literal["Critical", "High", "Medium", "Low", "Info"]
     cvss_score: float = Field(ge=0.0, le=10.0)
@@ -221,15 +221,15 @@ class VulnerabilityReport(BaseModel):
     location: str = Field(description="Vulnerability location, e.g., src/controller/UserController.java:15")
     sink_location: str = Field(description="Sink location, e.g., src/dao/UserDAO.java:42")
     
-    description: str = Field(description="What is the vulnerability and how it forms")
+    description: str = Field(description="What the vulnerability is and how it forms")
     impact: str = Field(description="How it affects the application and potential consequences")
-    exploit_condition: str = Field(description="Exploit conditions, e.g., no authentication required")
-    poc_payload: str = Field(description="PoC Payload")
-    fix_suggestion: str = Field(description="Concise fix method with code example")
+    exploit_condition: str = Field(description="Conditions required to exploit, e.g., no authentication needed")
+    poc_payload: str = Field(description="PoC payload")
+    fix_suggestion: str = Field(description="Concise remediation with code example")
     
     confidence: Literal["high", "medium", "low"]
-    taint_path: str = Field(description="Taint path as string")
-    data_flow_verified: bool = Field(description="Whether Joern data flow verification passed")
+    taint_path: str = Field(description="Taint path as a human-readable string")
+    data_flow_verified: bool = Field(description="Whether Joern data-flow verification passed")
 
 class LLMAnalysisDeps:
     model_name: str = "gpt-4o"
@@ -240,13 +240,13 @@ vuln_analysis_agent = Agent(
     deps_type=LLMAnalysisDeps,
     result_type=VulnerabilityReport,
     system_prompt=(
-        "You are a senior code security auditor. Based on the provided taint path and code slice, "
-        "determine if a real vulnerability exists and provide a structured analysis report. "
+        "You are a senior application-security auditor. Based on the provided taint path and code slice, "
+        "determine whether a real vulnerability exists and produce a structured analysis report. "
         "Analysis principles: "
-        "1. If effective sanitization exists (parameterized queries, strict whitelist), mark as NOT VULNERABLE. "
-        "2. If vulnerable, provide specific CVSS score and exploitable conditions. "
-        "3. Fix suggestions must include directly usable code snippets. "
-        "4. Use Chinese for all descriptive fields."
+        "1. If effective sanitization is present (parameterized queries, strict whitelist), mark as NOT VULNERABLE. "
+        "2. If vulnerable, provide a specific CVSS score and exploitable conditions. "
+        "3. Remediation suggestions must include directly usable code snippets. "
+        "4. Use English for all descriptive fields."
     )
 )
 
@@ -257,7 +257,7 @@ async def analyze_taint_path(
     prompt = build_analysis_prompt(path)
     return await vuln_analysis_agent.run(prompt, deps=ctx.deps)
 
-# Parallel analysis (5-10 paths per batch to avoid LLM RPM limits)
+# Parallel analysis (5-10 paths per batch to respect LLM RPM limits)
 semaphore = asyncio.Semaphore(10)
 async def analyze_with_limit(path: TaintPath):
     async with semaphore:
@@ -268,33 +268,33 @@ reports = await asyncio.gather(*analysis_tasks, return_exceptions=True)
 ```
 
 **Why Parallelizable**:
-- Each taint path analysis is completely independent
+- Each taint-path analysis is completely independent
 - LLM API calls are naturally parallel (subject to RPM/TPM limits)
 - Results are naturally aggregatable into a list
 
 **Serial Constraints**:
-- Must wait for Stage 3 completion (needs Joern-verified `TaintPath`)
+- Must wait for Stage 3 completion (requires Joern-verified `TaintPath`)
 
 **Outputs**:
-- `raw_reports.json` (raw vulnerability report list, may contain duplicates)
+- `raw_reports.json` — raw vulnerability report list (may contain duplicates)
 
 ---
 
 ### Stage 5: Final Report Generation (Serial, Non-Parallelizable)
 
-**Goal**: Aggregate, deduplicate, sort, and generate the final security report.
+**Goal**: Aggregate, deduplicate, sort, and emit the final consolidated security report.
 
-**Task List**:
+**Tasks**:
 1. **Load all reports**: Read from Stage 4 `raw_reports.json`
-2. **Deduplicate**: Merge duplicate reports for the same Sink (keep longest/most dangerous path)
-3. **Filter**: Remove entries with `confidence == "low"` or `data_flow_verified == false`
+2. **Deduplicate**: Merge duplicate reports for the same Sink (keep the longest / most dangerous path)
+3. **Filter**: Drop entries with `confidence == "low"` or `data_flow_verified == false`
 4. **Sort**: By `severity` (Critical > High > Medium > Low) -> `cvss_score` (desc) -> `confidence` (high to low)
 5. **Generate unified report** (Markdown + JSON dual format)
 
-**Why Non-Parallelizable**:
-- Requires global view for deduplication (cross-batch comparison of Sink locations)
-- Sorting requires full dataset
-- Report numbering (VULN-001) needs global increment
+**Why Serial**:
+- Deduplication requires a global view (cross-batch comparison of Sink locations)
+- Sorting requires the full dataset
+- Report numbering (VULN-001) needs a global increment
 - Statistical summary (total count, severity distribution) requires full aggregation
 
 **PydanticAI Aggregation Agent**:
@@ -315,12 +315,12 @@ report_agent = Agent(
     'openai:gpt-4o',
     result_type=FinalReport,
     system_prompt=(
-        "You are a security reporting expert. Aggregate raw vulnerability reports into a professional audit report. "
+        "You are a security-reporting expert. Aggregate raw vulnerability reports into a professional audit report. "
         "Requirements: "
-        "1. Sort by security level from high to low. "
+        "1. Sort by severity from highest to lowest. "
         "2. Merge duplicate reports for the same Sink. "
-        "3. Generate executive summary for management. "
-        "4. All output in Chinese."
+        "3. Generate an executive summary for management. "
+        "4. Use English for all output."
     )
 )
 
@@ -349,7 +349,7 @@ async def generate_final_report(
         f"High: {sum(1 for r in sorted_reports if r.severity == 'High')}, "
         f"Medium: {sum(1 for r in sorted_reports if r.severity == 'Medium')}, "
         f"Low: {sum(1 for r in sorted_reports if r.severity == 'Low')}. "
-        f"Generate a Chinese summary within 200 words describing overall risk posture and top priority fixes."
+        f"Generate an English summary within 200 words describing overall risk posture and top priority fixes."
     )
     
     summary = await report_agent.run(summary_prompt)
@@ -366,8 +366,8 @@ async def generate_final_report(
 ```
 
 **Outputs**:
-- `security_report.md` (human-readable, sorted by severity)
-- `security_report.json` (machine-readable, for CI/CD consumption)
+- `security_report.md` — human-readable, sorted by severity
+- `security_report.json` — machine-readable, for CI/CD consumption
 
 ---
 
@@ -392,7 +392,7 @@ This audit discovered 12 valid vulnerabilities, including 3 Critical and 5 High 
 
 ### VULN-2026-001: SQL Injection in UserController.login
 - **Location**: `src/controller/UserController.java:15` -> `src/dao/UserDAO.java:42`
-- **What is it**: The `username` parameter flows directly from HTTP request into SQL string concatenation without prepared statements or parameterization.
+- **What it is**: The `username` parameter flows directly from the HTTP request into SQL string concatenation without prepared statements or parameterization.
 - **Impact**: Attackers can bypass authentication without credentials using `admin OR 1=1`, and potentially read the entire database.
 - **Exploit Condition**: No authentication required; any user can trigger.
 - **Fix**: Replace string concatenation with `PreparedStatement`:
@@ -465,7 +465,7 @@ This audit discovered 12 valid vulnerabilities, including 3 Critical and 5 High 
 
 ---
 
-## 5. PydanticAI Complete Workflow Code
+## 5. Complete PydanticAI Workflow Code
 
 ```python
 #!/usr/bin/env python3
@@ -710,13 +710,13 @@ if __name__ == "__main__":
 | **Stage 5** Final Report | Serial | None | 1 | Stage 4 |
 
 ### 6.1 Why Stage 1 and Stage 5 Must Be Serial?
-- **Stage 1**: CPG is the physical foundation for all subsequent queries; file tree index is needed for Semgrep to skip unchanged files efficiently
-- **Stage 5**: Deduplication requires global comparison (cross-batch judgment of same Sink); sorting requires full dataset; report numbering requires global increment; statistical summary requires full aggregation
+- **Stage 1**: The CPG is the physical foundation for all subsequent queries; the file-tree index is needed for Semgrep to skip unchanged files efficiently
+- **Stage 5**: Deduplication requires a global view (cross-batch comparison of Sink locations); sorting requires the full dataset; report numbering requires a global increment; statistical summary requires full aggregation
 
 ### 6.2 Why Stage 2/3/4 Can Be Parallel?
-- **No shared mutable state**: Each task only reads source code/CPG, writes no shared data
+- **No shared mutable state**: Each task only reads source code / CPG and writes no shared data
 - **Results are mergeable**: JSON arrays naturally support append and concatenation
-- **Failure isolation**: Single batch failure does not affect other batches (with `return_exceptions=True`)
+- **Failure isolation**: A single batch failure does not affect other batches (with `return_exceptions=True`)
 
 ---
 
